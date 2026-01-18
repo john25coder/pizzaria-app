@@ -1,0 +1,9 @@
+### Criar um Usuário
+POST http://localhost:3333/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Joao IntelliJ",
+  "email": "joao.intellij@teste.com",
+  "senha": "senha-secreta"
+}

@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// MODELOS
+// ========================================
+
+model Usuario {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  senha    String
+  nome     String
+  telefone String? @unique
+  papel    String  @default("CLIENTE")
+  ativo    Boolean @default(true)
+
+  pedidos Pedido[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+model Produto {
+  id        String  @id @default(cuid())
+  nome      String
+  descricao String?
+  preco     Float
+  imagem    String?
+  ativo     Boolean @default(true)
+
+  itensPedidos ItemPedido[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("produtos")
+}
+
+model Tamanho {
+  id        String  @id @default(cuid())
+  nome      String
+  descricao String?
+  preco     Float
+  ativo     Boolean @default(true)
+
+  itensPedidos ItemPedido[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("tamanhos")
+}
+
+model Pedido {
+  id        String  @id @default(cuid())
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  status          String  @default("PENDENTE")
+  valorTotal      Float
+  valorEntrega    Float   @default(0)
+  valorDesconto   Float   @default(0)
+  observacoes     String?
+  enderecoEntrega String?
+
+  cupomId String?
+  cupom   Cupom?  @relation(fields: [cupomId], references: [id])
+
+  itens     ItemPedido[]
+  pagamento Pagamento?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id String @id @default(cuid())
+
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+
+  tamanhoId String
+  tamanho   Tamanho @relation(fields: [tamanhoId], references: [id])
+
+  quantidade Int
+  preco      Float
+
+  criadoEm DateTime @default(now())
+
+  @@map("itens_pedidos")
+}
+
+model Pagamento {
+  id       String @id @default(cuid())
+  pedidoId String @unique
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  stripePaymentIntentId String @unique
+  status                String @default("PENDENTE") // PENDENTE, PROCESSANDO, SUCESSO, FALHOU
+  valor                 Float
+  metodo                String @default("CARTAO") // CARTAO, PIX, BOLETO
+
+  descricao String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("pagamentos")
+}
+
+model Cupom {
+  id         String    @id @default(cuid())
+  codigo     String    @unique
+  desconto   Float // Pode ser porcentagem (ex: 10 para 10%) ou valor fixo
+  tipo       String    @default("PORCENTAGEM") // "PORCENTAGEM" ou "FIXO"
+  validade   DateTime?
+  ativo      Boolean   @default(true)
+  usoMaximo  Int? // Quantas vezes pode ser usado no total
+  usosAtuais Int       @default(0)
+
+  pedidos Pedido[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("cupons")
+}
