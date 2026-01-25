@@ -1,43 +1,31 @@
-import { Request, Response } from 'express';
+
+    import { Request, Response } from 'express';
 import { PedidosService } from '../services/pedido.services';
-import { CriarPedidoDTO } from '../types/dtos';
+import { AuthenticatedRequest } from '../types/auth.types'; // Importe seu tipo customizado
 
 const service = new PedidosService();
 
 export class PedidoController {
     async criar(req: Request, res: Response) {
         try {
-            const dados = req.body;
+            // Type Casting seguro pois o middleware já validou
+            const usuarioId = (req as AuthenticatedRequest).usuario?.id;
 
-            if (!dados.itens || dados.itens.length === 0) {
-                return res.status(400).json({
-                    error: 'Pedido deve ter pelo menos 1 item'
-                });
+            if (!usuarioId) {
+                return res.status(401).json({ error: 'Usuário não identificado' });
             }
 
-            if (!dados.usuarioId) {
-                return res.status(400).json({
-                    error: 'Usuário é obrigatório'
-                });
-            }
+            const pedido = await service.criar({
+                ...req.body,
+                usuarioId
+            });
 
-            const pedido = await service.criar(dados);
-
-            res.status(201).json({
+            return res.status(201).json({
                 success: true,
-                data: pedido,
-                message: 'Pedido criado com sucesso'
+                data: pedido
             });
         } catch (error: any) {
-            console.error('Erro ao criar pedido:', error);
-
-            if (error.message.includes('não encontrado')) {
-                return res.status(404).json({ error: error.message });
-            }
-
-            res.status(400).json({
-                error: error.message || 'Erro ao criar pedido'
-            });
+            return res.status(400).json({ error: error.message });
         }
     }
 

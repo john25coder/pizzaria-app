@@ -4,10 +4,19 @@ import { autenticar } from '../middlewares/auth.middlewares';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { validar } from '../util/validation';
 import { z } from 'zod';
+import {PedidoController} from "@/controllers/pedido.controller";
 
 const router = Router();
 const service = new PedidosService();
+const controller = new PedidoController();
 
+// Rota limpa e legível!
+router.post(
+    '/',
+    autenticar,
+    validate(criarPedidoSchema),
+    controller.criar
+);
 const criarPedidoSchema = z.object({
     itens: z.array(z.object({
         produtoId: z.string(),
