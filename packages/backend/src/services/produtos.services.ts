@@ -1,36 +1,89 @@
 import { PrismaClient } from '@prisma/client';
-import { CriarProdutoDTO } from '../types/dtos';
 
 const prisma = new PrismaClient();
 
 export class ProdutosService {
     /**
-     * Lista todos os produtos ativos
+     * Listar produtos com paginação e filtros
      */
-    async listarTodos() {
+    async listarComPaginacao(params: {
+        page?: number;
+        limit?: number;
+        busca?: string;
+        ativo?: boolean;
+    }) {
         try {
-            const produtos = await prisma.produto.findMany({
-                where: { ativo: true },
-                orderBy: { nome: 'asc' }
-            });
+            const page = params.page || 1;
+            const limit = params.limit || 10;
+            const skip = (page - 1) * limit;
 
-            return produtos;
+            // Construir filtro
+            const where: any = {};
+
+            if (params.ativo !== undefined) {
+                where.ativo = params.ativo;
+            }
+
+            if (params.busca) {
+                where.OR = [
+                    { nome: { contains: params.busca, mode: 'insensitive' } },
+                    { descricao: { contains: params.busca, mode: 'insensitive' } }
+                ];
+            }
+
+            // Buscar produtos e total em paralelo
+            const [produtos, total] = await Promise.all([
+                prisma.produto.findMany({
+                    where,
+                    skip,
+                    take: limit,
+                    orderBy: { criadoEm: 'desc' }
+                }),
+                prisma.produto.count({ where })
+            ]);
+
+            const totalPages = Math.ceil(total / limit);
+
+            return {
+                produtos,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages,
+                    hasNext: page < totalPages,
+                    hasPrev: page > 1
+                }
+            };
         } catch (error) {
-            console.error('Erro ao listar todos os produtos:', error);
+            console.error('Erro ao listar produtos:', error);
             throw error;
         }
     }
 
     /**
-     * Busca um produto por ID
+     * Listar todos (sem paginação) - para uso interno
+     */
+    async listarTodos() {
+        try {
+            const produtos = await prisma.produto.findMany({
+                where: { ativo: true },
+                orderBy: { criadoEm: 'desc' }
+            });
+            return produtos;
+        } catch (error) {
+            console.error('Erro ao listar produtos:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Buscar por ID
      */
     async buscarPorId(id: string) {
         try {
             const produto = await prisma.produto.findUnique({
-                where: { id },
-                include: {
-                    itensPedidos: true
-                }
+                where: { id }
             });
 
             if (!produto) {
@@ -45,19 +98,15 @@ export class ProdutosService {
     }
 
     /**
-     * Cria um novo produto
+     * Criar produto
      */
-    async criar(dados: CriarProdutoDTO) {
+    async criar(dados: {
+        nome: string;
+        descricao?: string;
+        preco: number;
+        imagem?: string;
+    }) {
         try {
-            // ✅ Validar se produto já existe
-            const produtoExiste = await prisma.produto.findFirst({
-                where: { nome: dados.nome }
-            });
-
-            if (produtoExiste) {
-                throw new Error('Produto com este nome já existe');
-            }
-
             const produto = await prisma.produto.create({
                 data: {
                     nome: dados.nome,
@@ -67,7 +116,6 @@ export class ProdutosService {
                     ativo: true
                 }
             });
-
             return produto;
         } catch (error) {
             console.error('Erro ao criar produto:', error);
@@ -76,46 +124,20 @@ export class ProdutosService {
     }
 
     /**
-     * Atualiza um produto
+     * Atualizar produto
      */
-    async atualizar(
-        id: string,
-        dados: Partial<CriarProdutoDTO>
-    ) {
+    async atualizar(id: string, dados: {
+        nome?: string;
+        descricao?: string;
+        preco?: number;
+        imagem?: string;
+        ativo?: boolean;
+    }) {
         try {
-            // ✅ Validar se produto existe
-            const produtoExiste = await prisma.produto.findUnique({
-                where: { id }
-            });
-
-            if (!produtoExiste) {
-                throw new Error('Produto não encontrado');
-            }
-
-            // ✅ Se mudar nome, validar duplicidade
-            if (dados.nome && dados.nome !== produtoExiste.nome) {
-                const nomeEmUso = await prisma.produto.findFirst({
-                    where: {
-                        nome: dados.nome,
-                        id: { not: id }
-                    }
-                });
-
-                if (nomeEmUso) {
-                    throw new Error('Produto com este nome já existe');
-                }
-            }
-
             const produto = await prisma.produto.update({
                 where: { id },
-                data: {
-                    ...(dados.nome && { nome: dados.nome }),
-                    ...(dados.descricao !== undefined && { descricao: dados.descricao }),
-                    ...(dados.preco !== undefined && { preco: dados.preco }),
-                    ...(dados.imagem !== undefined && { imagem: dados.imagem })
-                }
+                data: dados
             });
-
             return produto;
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
@@ -124,83 +146,15 @@ export class ProdutosService {
     }
 
     /**
-     * Deleta um produto
+     * Deletar produto
      */
     async deletar(id: string) {
         try {
-            const produtoExiste = await prisma.produto.findUnique({
-                where: { id }
-            });
-
-            if (!produtoExiste) {
-                throw new Error('Produto não encontrado');
-            }
-
             await prisma.produto.delete({
                 where: { id }
             });
-
-            return { success: true, message: 'Produto deletado com sucesso' };
         } catch (error) {
             console.error('Erro ao deletar produto:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Alterna entre ativo/inativo
-     */
-    async alternarAtivo(id: string) {
-        try {
-            const produto = await prisma.produto.findUnique({
-                where: { id }
-            });
-
-            if (!produto) {
-                throw new Error('Produto não encontrado');
-            }
-
-            const produtoAtualizado = await prisma.produto.update({
-                where: { id },
-                data: { ativo: !produto.ativo }
-            });
-
-            return produtoAtualizado;
-        } catch (error) {
-            console.error('Erro ao alternar ativo:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Busca com filtros avançados
-     */
-    async buscarComFiltros(filtros: {
-        ativo?: boolean;
-        busca?: string;
-    }) {
-        try {
-            const where: any = {};
-
-            if (filtros.ativo !== undefined) {
-                where.ativo = filtros.ativo;
-            }
-
-            if (filtros.busca) {
-                where.OR = [
-                    { nome: { contains: filtros.busca, mode: 'insensitive' } },
-                    { descricao: { contains: filtros.busca, mode: 'insensitive' } }
-                ];
-            }
-
-            const produtos = await prisma.produto.findMany({
-                where,
-                orderBy: { nome: 'asc' }
-            });
-
-            return produtos;
-        } catch (error) {
-            console.error('Erro ao buscar com filtros:', error);
             throw error;
         }
     }

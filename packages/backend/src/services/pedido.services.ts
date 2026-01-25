@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
+import { EmailService } from './email.services';
 
 const prisma = new PrismaClient();
+const emailService = new EmailService();
+
 
 export class PedidosService {
     /**
@@ -15,9 +18,10 @@ export class PedidosService {
         }>;
         observacoes?: string;
         enderecoEntrega: string;
+        cupomId?: string;
     }) {
         try {
-            // ✅ Validar se usuário existe
+            // Validar se usuário existe
             const usuario = await prisma.usuario.findUnique({
                 where: { id: dados.usuarioId }
             });
@@ -26,7 +30,7 @@ export class PedidosService {
                 throw new Error('Usuário não encontrado');
             }
 
-            // ✅ Validar e buscar produtos/tamanhos para calcular valor
+            // Validar e buscar produtos/tamanhos para calcular valor
             let valorTotal = 0;
             const itensComPreco = [];
 
@@ -55,12 +59,57 @@ export class PedidosService {
                 });
             }
 
-            // ✅ Criar pedido
+            // Validar e aplicar cupom (se houver)
+            let valorDesconto = 0;
+
+            if (dados.cupomId) {
+                const cupom = await prisma.cupom.findUnique({
+                    where: { id: dados.cupomId }
+                });
+
+                if (!cupom) {
+                    throw new Error('Cupom não encontrado');
+                }
+
+                if (!cupom.ativo) {
+                    throw new Error('Cupom inativo');
+                }
+
+                if (cupom.validade && new Date() > cupom.validade) {
+                    throw new Error('Cupom expirado');
+                }
+
+                if (cupom.usoMaximo && cupom.usosAtuais >= cupom.usoMaximo) {
+                    throw new Error('Cupom atingiu o limite de usos');
+                }
+
+                // Calcular desconto
+                if (cupom.tipo === 'PORCENTAGEM') {
+                    valorDesconto = (valorTotal * cupom.desconto) / 100;
+                } else if (cupom.tipo === 'FIXO') {
+                    valorDesconto = cupom.desconto;
+                }
+
+                // Garantir que desconto não seja maior que o valor total
+                if (valorDesconto > valorTotal) {
+                    valorDesconto = valorTotal;
+                }
+
+                // Incrementar contador de uso do cupom
+                await prisma.cupom.update({
+                    where: { id: cupom.id },
+                    data: { usosAtuais: { increment: 1 } }
+                });
+            }
+
+            // Criar pedido
             const pedido = await prisma.pedido.create({
                 data: {
                     usuarioId: dados.usuarioId,
                     status: 'PENDENTE',
                     valorTotal,
+                    valorDesconto,
+                    cupomId: dados.cupomId,
                     observacoes: dados.observacoes,
                     enderecoEntrega: dados.enderecoEntrega,
                     itens: {
@@ -86,9 +135,15 @@ export class PedidosService {
                             produto: true,
                             tamanho: true
                         }
-                    }
+                    },
+                    cupom: true
                 }
             });
+            try {
+                await emailService.enviarConfirmacaoPedido(pedido.id);
+            } catch (error) {
+                console.log('Não foi possível enviar email');
+            }
 
             return pedido;
         } catch (error) {
@@ -98,7 +153,7 @@ export class PedidosService {
     }
 
     /**
-     * Listar pedidos do usuário
+     * Listar pedidos do usuário SEM paginação
      */
     async listarPorUsuario(usuarioId: string) {
         try {
@@ -110,7 +165,8 @@ export class PedidosService {
                             produto: true,
                             tamanho: true
                         }
-                    }
+                    },
+                    cupom: true
                 },
                 orderBy: { criadoEm: 'desc' }
             });
@@ -118,6 +174,66 @@ export class PedidosService {
             return pedidos;
         } catch (error) {
             console.error('Erro ao listar pedidos:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Listar pedidos por usuário COM paginação
+     */
+    async listarPorUsuarioComPaginacao(
+        usuarioId: string,
+        opcoes: {
+            page?: number;
+            limit?: number;
+            status?: string;
+        }
+    ) {
+        try {
+            const page = opcoes.page || 1;
+            const limit = opcoes.limit || 10;
+            const skip = (page - 1) * limit;
+
+            const where: any = { usuarioId };
+
+            if (opcoes.status) {
+                where.status = opcoes.status;
+            }
+
+            const [pedidos, total] = await Promise.all([
+                prisma.pedido.findMany({
+                    where,
+                    skip,
+                    take: limit,
+                    include: {
+                        itens: {
+                            include: {
+                                produto: true,
+                                tamanho: true
+                            }
+                        },
+                        cupom: true
+                    },
+                    orderBy: { criadoEm: 'desc' }
+                }),
+                prisma.pedido.count({ where })
+            ]);
+
+            const totalPages = Math.ceil(total / limit);
+
+            return {
+                pedidos,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages,
+                    hasNext: page < totalPages,
+                    hasPrev: page > 1
+                }
+            };
+        } catch (error) {
+            console.error('Erro ao listar pedidos com paginação:', error);
             throw error;
         }
     }
@@ -143,7 +259,8 @@ export class PedidosService {
                             produto: true,
                             tamanho: true
                         }
-                    }
+                    },
+                    cupom: true
                 }
             });
 
@@ -193,7 +310,8 @@ export class PedidosService {
                             produto: true,
                             tamanho: true
                         }
-                    }
+                    },
+                    cupom: true
                 }
             });
 
@@ -234,7 +352,7 @@ export class PedidosService {
     }
 
     /**
-     * Listar todos os pedidos (admin)
+     * Listar todos os pedidos SEM paginação (admin)
      */
     async listarTodos(filtros?: {
         status?: string;
@@ -274,7 +392,8 @@ export class PedidosService {
                             produto: true,
                             tamanho: true
                         }
-                    }
+                    },
+                    cupom: true
                 },
                 orderBy: { criadoEm: 'desc' }
             });
@@ -282,6 +401,83 @@ export class PedidosService {
             return pedidos;
         } catch (error) {
             console.error('Erro ao listar pedidos:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Listar todos os pedidos COM paginação (admin)
+     */
+    async listarTodosComPaginacao(opcoes: {
+        page?: number;
+        limit?: number;
+        status?: string;
+        dataInicio?: Date;
+        dataFim?: Date;
+    }) {
+        try {
+            const page = opcoes.page || 1;
+            const limit = opcoes.limit || 10;
+            const skip = (page - 1) * limit;
+
+            const where: any = {};
+
+            if (opcoes.status) {
+                where.status = opcoes.status;
+            }
+
+            if (opcoes.dataInicio || opcoes.dataFim) {
+                where.criadoEm = {};
+                if (opcoes.dataInicio) {
+                    where.criadoEm.gte = opcoes.dataInicio;
+                }
+                if (opcoes.dataFim) {
+                    where.criadoEm.lte = opcoes.dataFim;
+                }
+            }
+
+            const [pedidos, total] = await Promise.all([
+                prisma.pedido.findMany({
+                    where,
+                    skip,
+                    take: limit,
+                    include: {
+                        usuario: {
+                            select: {
+                                id: true,
+                                nome: true,
+                                email: true,
+                                telefone: true
+                            }
+                        },
+                        itens: {
+                            include: {
+                                produto: true,
+                                tamanho: true
+                            }
+                        },
+                        cupom: true
+                    },
+                    orderBy: { criadoEm: 'desc' }
+                }),
+                prisma.pedido.count({ where })
+            ]);
+
+            const totalPages = Math.ceil(total / limit);
+
+            return {
+                pedidos,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages,
+                    hasNext: page < totalPages,
+                    hasPrev: page > 1
+                }
+            };
+        } catch (error) {
+            console.error('Erro ao listar pedidos com paginação:', error);
             throw error;
         }
     }

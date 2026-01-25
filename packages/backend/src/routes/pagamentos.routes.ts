@@ -1,177 +1,144 @@
+// packages/backend/src/routes/pagamentos.routes.ts
 import { Router, Request, Response } from 'express';
-import { StripeService } from '../services/stripe.services';
+import { PrismaClient } from '@prisma/client';
+import { StripeService } from '../services/stripe.sevice';
 import { autenticar } from '../middlewares/auth.middlewares';
 import { AuthenticatedRequest } from '../types/auth.types';
-import Stripe from 'stripe';
 
 const router = Router();
-const service = new StripeService();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripeService = new StripeService();
+const prisma = new PrismaClient(); // 🆕 ADICIONAR ESTA LINHA
 
 // ========================================
 // POST /api/pagamentos/criar-intent
-// Criar payment intent
+// Criar Payment Intent para um pedido
 // ========================================
-
 router.post('/criar-intent', autenticar, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        if (!req.usuario) {
-            return res.status(401).json({ error: 'Usuário não autenticado' });
+        const { pedidoId } = req.body;
+
+        if (!pedidoId) {
+            return res.status(400).json({ error: 'pedidoId é obrigatório' });
         }
 
-        const { pedidoId, valor } = req.body;
+        // Verificar se usuário é owner do pedido
+        const pedido = await prisma.pedido.findUnique({
+            where: { id: pedidoId }
+        });
 
-        if (!pedidoId || !valor) {
-            return res.status(400).json({ error: 'pedidoId e valor são obrigatórios' });
+        if (!pedido) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
         }
 
-        const resultado = await service.criarPaymentIntent(
-            pedidoId,
-            valor,
-            req.usuario.email
-        );
-
-        res.json({
-            success: true,
-            message: 'Payment intent criado com sucesso',
-            data: resultado
-        });
-    } catch (error: any) {
-        console.error('Erro ao criar intent:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// ========================================
-// POST /api/pagamentos/confirmar
-// Confirmar pagamento
-// ========================================
-
-router.post('/confirmar', autenticar, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const { paymentIntentId } = req.body;
-
-        if (!paymentIntentId) {
-            return res.status(400).json({ error: 'paymentIntentId é obrigatório' });
+        if (pedido.usuarioId !== req.usuario?.id && req.usuario?.papel !== 'ADMIN') {
+            return res.status(403).json({ error: 'Acesso negado' });
         }
 
-        const resultado = await service.confirmarPagamento(paymentIntentId);
+        const result = await stripeService.criarPaymentIntent(pedidoId);
 
         res.json({
             success: true,
-            message: 'Pagamento confirmado com sucesso',
-            data: resultado
+            data: result
         });
+
     } catch (error: any) {
-        console.error('Erro ao confirmar pagamento:', error);
+        console.error('Erro ao criar payment intent:', error);
         res.status(400).json({ error: error.message });
-    }
-});
-
-// ========================================
-// GET /api/pagamentos/status/:paymentIntentId
-// Obter status do pagamento
-// ========================================
-
-router.get('/status/:paymentIntentId', autenticar, async (req: Request, res: Response) => {
-    try {
-        const { paymentIntentId } = req.params;
-
-        const resultado = await service.obterStatusPagamento(paymentIntentId);
-
-        res.json({
-            success: true,
-            data: resultado
-        });
-    } catch (error: any) {
-        console.error('Erro ao obter status:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// ========================================
-// DELETE /api/pagamentos/cancelar/:paymentIntentId
-// Cancelar pagamento
-// ========================================
-
-router.delete('/cancelar/:paymentIntentId', autenticar, async (req: Request, res: Response) => {
-    try {
-        const { paymentIntentId } = req.params;
-        const { motivo } = req.body;
-
-        const resultado = await service.cancelarPagamento(paymentIntentId, motivo);
-
-        res.json({
-            success: true,
-            message: 'Pagamento cancelado',
-            data: resultado
-        });
-    } catch (error: any) {
-        console.error('Erro ao cancelar pagamento:', error);
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// ========================================
-// GET /api/pagamentos/meus-pagamentos
-// Listar pagamentos do usuário
-// ========================================
-
-router.get('/meus-pagamentos', autenticar, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        if (!req.usuario) {
-            return res.status(401).json({ error: 'Usuário não autenticado' });
-        }
-
-        const pagamentos = await service.listarPagamentosUsuario(req.usuario.id);
-
-        res.json({
-            success: true,
-            data: pagamentos
-        });
-    } catch (error: any) {
-        console.error('Erro ao listar pagamentos:', error);
-        res.status(500).json({ error: error.message });
     }
 });
 
 // ========================================
 // POST /api/pagamentos/webhook
-// Webhook do Stripe (sem autenticação)
+// Webhook do Stripe (NÃO precisa autenticação)
 // ========================================
-
 router.post('/webhook', async (req: Request, res: Response) => {
     try {
-        const sig = req.headers['stripe-signature'] as string;
-        const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+        const signature = req.headers['stripe-signature'] as string;
 
-        if (!endpointSecret) {
-            console.warn('STRIPE_WEBHOOK_SECRET não configurado');
-            return res.status(400).json({ error: 'Webhook não configurado' });
+        if (!signature) {
+            return res.status(400).json({ error: 'Signature ausente' });
         }
 
-        let event;
+        // rawBody é necessário para validar a signature
+        const rawBody = req.body;
 
-        try {
-            event = stripe.webhooks.constructEvent(
-                req.body,
-                sig,
-                endpointSecret
-            );
-        } catch (err: any) {
-            console.error('Erro ao validar webhook:', err);
-            return res.status(400).json({ error: `Webhook Error: ${err.message}` });
-        }
+        await stripeService.processarWebhook(signature, rawBody);
 
-        // ✅ Processar evento
-        await service.processarWebhook(event);
+        res.json({ received: true });
 
-        res.json({
-            received: true
-        });
     } catch (error: any) {
         console.error('Erro no webhook:', error);
-        res.status(500).json({ error: error.message });
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// ========================================
+// POST /api/pagamentos/:pedidoId/reembolso
+// Criar reembolso (admin ou owner)
+// ========================================
+router.post('/:pedidoId/reembolso', autenticar, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { pedidoId } = req.params;
+        const { motivo } = req.body;
+
+        // Verificar permissão
+        const pedido = await prisma.pedido.findUnique({
+            where: { id: pedidoId }
+        });
+
+        if (!pedido) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+
+        if (pedido.usuarioId !== req.usuario?.id && req.usuario?.papel !== 'ADMIN') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const result = await stripeService.criarReembolso(pedidoId, motivo);
+
+        res.json({
+            success: true,
+            message: 'Reembolso criado com sucesso',
+            data: result
+        });
+
+    } catch (error: any) {
+        console.error('Erro ao criar reembolso:', error);
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// ========================================
+// GET /api/pagamentos/:pedidoId/status
+// Buscar status do pagamento
+// ========================================
+router.get('/:pedidoId/status', autenticar, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const { pedidoId } = req.params;
+
+        // Verificar permissão
+        const pedido = await prisma.pedido.findUnique({
+            where: { id: pedidoId }
+        });
+
+        if (!pedido) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+
+        if (pedido.usuarioId !== req.usuario?.id && req.usuario?.papel !== 'ADMIN') {
+            return res.status(403).json({ error: 'Acesso negado' });
+        }
+
+        const status = await stripeService.buscarStatusPagamento(pedidoId);
+
+        res.json({
+            success: true,
+            data: status
+        });
+
+    } catch (error: any) {
+        console.error('Erro ao buscar status:', error);
+        res.status(404).json({ error: error.message });
     }
 });
 
