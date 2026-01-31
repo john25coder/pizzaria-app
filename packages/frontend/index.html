@@ -1,13 +1,1190 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizzaria Bambinos</title>
+    <style>
+        :root {
+            --primary-dark: #6B4423;
+            --secondary-gold: #D4AF37;
+            --bg-light: #F5F1E8;
+            --text-dark: #2C2C2C;
+            --border-subtle: #DDD8CC;
+            --success: #4CAF50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* HEADER / NAVBAR */
+        .header {
+            background-color: white;
+            padding: 20px;
+            border-bottom: 2px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            letter-spacing: 1px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background-color: var(--bg-light);
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .user-name {
+            color: var(--primary-dark);
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            background-color: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            color: var(--primary-dark);
+            font-size: 13px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-logout:hover {
+            background-color: var(--bg-light);
+            border-color: var(--primary-dark);
+        }
+
+        .search-bar {
+            padding: 10px 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            width: 250px;
+            font-size: 14px;
+            background-color: var(--bg-light);
+        }
+
+        .cart-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 20px;
+            transition: color 0.3s;
+        }
+
+        .cart-icon:hover {
+            color: var(--secondary-gold);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: var(--primary-dark);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* CATEGORIES */
+        .categories {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            justify-content: center;
+            border-bottom: 1px solid var(--border-subtle);
+            background-color: white;
+            overflow-x: auto;
+        }
+
+        .category-btn {
+            padding: 10px 24px;
+            border: 1px solid var(--primary-dark);
+            background-color: white;
+            color: var(--primary-dark);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 4px;
+            font-family: 'Georgia', serif;
+            font-weight: 500;
+        }
+
+        .category-btn:hover,
+        .category-btn.active {
+            background-color: var(--primary-dark);
+            color: white;
+        }
+
+        /* MENU GRID */
+        .menu-container {
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .pizza-card {
+            background-color: white;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .pizza-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+        }
+
+        .pizza-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #D4AF37 0%, #6B4423 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .pizza-info {
+            padding: 20px;
+        }
+
+        .pizza-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .pizza-description {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .pizza-price {
+            font-size: 20px;
+            color: var(--secondary-gold);
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .pizza-footer {
+            display: flex;
+            gap: 8px;
+        }
+
+        .size-select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            font-family: 'Georgia', serif;
+            font-size: 12px;
+        }
+
+        .btn-add {
+            flex: 1;
+            padding: 10px;
+            background-color: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            font-family: 'Georgia', serif;
+        }
+
+        .btn-add:hover {
+            background-color: #5a3a1f;
+        }
+
+        /* CART SIDEBAR */
+        .cart-sidebar {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background-color: white;
+            border-left: 2px solid var(--border-subtle);
+            transition: right 0.3s;
+            z-index: 200;
+            overflow-y: auto;
+            box-shadow: -4px 0 12px rgba(0,0,0,0.1);
+        }
+
+        .cart-sidebar.active {
+            right: 0;
+        }
+
+        .cart-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background-color: white;
+        }
+
+        .cart-header h2 {
+            color: var(--primary-dark);
+            font-size: 22px;
+        }
+
+        .close-cart {
+            cursor: pointer;
+            font-size: 24px;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close-cart:hover {
+            color: var(--primary-dark);
+        }
+
+        .cart-items {
+            padding: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-name {
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 4px;
+        }
+
+        .cart-item-size {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .cart-item-price {
+            color: var(--secondary-gold);
+            font-weight: bold;
+        }
+
+        .cart-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qty-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--border-subtle);
+            background-color: var(--bg-light);
+            cursor: pointer;
+            border-radius: 2px;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .qty-btn:hover {
+            background-color: var(--primary-dark);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .qty-display {
+            width: 28px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .btn-remove {
+            width: 24px;
+            height: 24px;
+            background-color: #ffebee;
+            color: #c62828;
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-remove:hover {
+            background-color: #c62828;
+            color: white;
+        }
+
+        .cart-summary {
+            padding: 20px;
+            border-top: 2px solid var(--border-subtle);
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+            margin-bottom: 16px;
+        }
+
+        .btn-checkout {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-family: 'Georgia', serif;
+        }
+
+        .btn-checkout:hover {
+            background-color: #5a3a1f;
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        /* SECTIONS */
+        .section-title {
+            color: var(--primary-dark);
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-subtle);
+            font-weight: 500;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header-actions {
+                gap: 10px;
+            }
+
+            .search-bar {
+                width: 150px;
+                font-size: 12px;
+            }
+
+            .user-info {
+                padding: 6px 12px;
+            }
+
+            .user-name {
+                font-size: 12px;
+            }
+
+            .menu-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .cart-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        /* PIZZA BUILDER */
+        .builder-section {
+            background-color: white;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .tamanhos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .tamanho-btn {
+            padding: 25px;
+            border: 2px solid var(--border-subtle);
+            background-color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Georgia', serif;
+        }
+
+        .tamanho-btn:hover {
+            border-color: var(--primary-dark);
+            box-shadow: 0 4px 12px rgba(107, 68, 35, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .tamanho-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .tamanho-info {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .sabores-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-subtle);
+        }
+
+        .sabor-tab {
+            padding: 12px 20px;
+            background-color: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s;
+        }
+
+        .sabor-tab.active {
+            color: var(--primary-dark);
+            border-bottom-color: var(--primary-dark);
+        }
+
+        .sabor-tab:hover {
+            color: var(--primary-dark);
+        }
+
+        .sabores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .sabor-card {
+            padding: 15px;
+            border: 2px solid var(--border-subtle);
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            font-family: 'Georgia', serif;
+        }
+
+        .sabor-card:hover {
+            border-color: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .sabor-card.selected {
+            background-color: var(--primary-dark);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+
+        .sabor-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .sabor-price {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .sabor-check {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .bordas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .borda-card {
+            padding: 20px;
+            border: 2px solid var(--border-subtle);
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            font-family: 'Georgia', serif;
+        }
+
+        .borda-card:hover {
+            border-color: var(--primary-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .borda-card.selected {
+            background-color: var(--secondary-gold);
+            border-color: var(--secondary-gold);
+            color: white;
+        }
+
+        .borda-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .borda-price {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .borda-check {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .btn-back {
+            padding: 10px 16px;
+            background-color: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            color: var(--primary-dark);
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--bg-light);
+            border-color: var(--primary-dark);
+        }
+
+        .btn-continue,
+        .btn-finalize {
+            padding: 14px 32px;
+            background-color: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .btn-continue:hover:not(:disabled),
+        .btn-finalize:hover {
+            background-color: #5a3a1f;
+        }
+
+        .btn-continue:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* NOTIFICATION */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideUp 0.3s ease-out;
+            z-index: 300;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">🍕 BAMBINOS</div>
+    <div class="header-actions">
+        <div class="user-info">
+            <span style="font-size: 18px;">👤</span>
+            <span class="user-name" id="userName">Cliente</span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+        <span class="cart-icon" onclick="toggleCart()">
+                🛒
+                <span class="cart-count" id="cartCount">0</span>
+            </span>
+    </div>
+</div>
+
+<!-- MENU -->
+<div class="menu-container">
+    <div class="section-title">Crie Sua Pizza</div>
+    <div id="menuView" style="display:none;">
+        <div class="menu-grid" id="menuGrid"></div>
+    </div>
+    <div id="pizzaBuilderView">
+        <!-- PIZZA BUILDER SERÁ RENDERIZADO AQUI -->
+    </div>
+</div>
+
+<!-- CART SIDEBAR -->
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-header">
+        <h2>Seu Carrinho</h2>
+        <span class="close-cart" onclick="toggleCart()">✕</span>
+    </div>
+    <div class="cart-items" id="cartItems">
+        <div class="empty-cart">Seu carrinho está vazio</div>
+    </div>
+    <div class="cart-summary">
+        <div class="summary-line">
+            <span>Subtotal:</span>
+            <span id="subtotal">R$ 0,00</span>
+        </div>
+        <div class="summary-line">
+            <span>Taxa entrega:</span>
+            <span id="delivery">R$ 8,00</span>
+        </div>
+        <div class="summary-total">
+            <span>Total:</span>
+            <span id="total">R$ 8,00</span>
+        </div>
+        <button class="btn-checkout" onclick="checkout()">Finalizar Pedido</button>
+    </div>
+</div>
+
+<script>
+    // ===== SISTEMA DE AUTENTICAÇÃO =====
+    function getCurrentUser() {
+        return JSON.parse(localStorage.getItem('bambinos_current_user') || 'null');
+    }
+
+    function checkAuthentication() {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        return true;
+    }
+
+    function logout() {
+        if (confirm('Deseja realmente sair?')) {
+            localStorage.removeItem('bambinos_current_user');
+            window.location.href = 'login.html';
+        }
+    }
+
+    // Verificar autenticação ao carregar
+    if (!checkAuthentication()) {
+        throw new Error('Not authenticated - redirecting to login');
+    }
+
+    // Exibir nome do usuário
+    window.addEventListener('DOMContentLoaded', function() {
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+            const firstName = currentUser.name.split(' ')[0];
+            document.getElementById('userName').textContent = firstName;
+        }
+    });
+
+    // ===== DADOS ESTRUTURADOS COM BASE NO CARDÁPIO REAL =====
+    const saboresData = {
+        classicas: [
+            { id: 1, name: 'Alho e Óleo', categoria: 'Clássicas' },
+            { id: 2, name: 'Atum', categoria: 'Clássicas' },
+            { id: 3, name: 'Bacon', categoria: 'Clássicas' },
+            { id: 4, name: 'Bacon ao Alho e Óleo', categoria: 'Clássicas' },
+            { id: 5, name: 'Bacon com Goiabada', categoria: 'Clássicas' },
+            { id: 6, name: 'Brócolis', categoria: 'Clássicas' },
+            { id: 7, name: 'Calabresa', categoria: 'Clássicas' },
+            { id: 8, name: 'Calabresa Acebolada', categoria: 'Clássicas' },
+            { id: 9, name: 'Calabresa com Catupiry', categoria: 'Clássicas' },
+            { id: 10, name: 'Cenoura com Requeijão', categoria: 'Clássicas' },
+            { id: 11, name: 'Champignon', categoria: 'Clássicas' },
+            { id: 12, name: 'Frango com Barbecue', categoria: 'Clássicas' },
+            { id: 13, name: 'Frango com Catupiry', categoria: 'Clássicas' },
+            { id: 14, name: 'Margherita', categoria: 'Clássicas' },
+            { id: 15, name: 'Milho', categoria: 'Clássicas' },
+            { id: 16, name: 'Mussarela', categoria: 'Clássicas' },
+            { id: 17, name: 'Palmito', categoria: 'Clássicas' },
+            { id: 18, name: 'Portuguesa', categoria: 'Clássicas' },
+            { id: 19, name: 'Presunto', categoria: 'Clássicas' },
+            { id: 20, name: 'Provolone', categoria: 'Clássicas' },
+            { id: 21, name: 'Quatro Queijo', categoria: 'Clássicas' }
+        ],
+        casa: [
+            { id: 22, name: 'Bambinos', categoria: 'Da Casa' },
+            { id: 23, name: 'Basca', categoria: 'Da Casa' },
+            { id: 24, name: 'Carne de Panela com Barbecue', categoria: 'Da Casa' },
+            { id: 25, name: 'Carne de Panela com Requeijão', categoria: 'Da Casa' },
+            { id: 26, name: 'Coração', categoria: 'Da Casa' },
+            { id: 27, name: 'Coração ao Molho Branco do Cheff', categoria: 'Da Casa' },
+            { id: 28, name: 'Doritos Suprema', categoria: 'Da Casa' },
+            { id: 29, name: 'Lombo', categoria: 'Da Casa' },
+            { id: 30, name: 'Lombo Agridoce', categoria: 'Da Casa' },
+            { id: 31, name: 'Lombo com Abacaxi', categoria: 'Da Casa' },
+            { id: 32, name: 'Salame', categoria: 'Da Casa' },
+            { id: 33, name: 'Stroganoff de Carne', categoria: 'Da Casa' },
+            { id: 34, name: 'Stroganoff de Frango', categoria: 'Da Casa' },
+            { id: 35, name: 'Tomate Seco com Rúcula', categoria: 'Da Casa' },
+            { id: 36, name: 'Vegetariana', categoria: 'Da Casa' }
+        ],
+        premium: [
+            { id: 37, name: 'Camarão', categoria: 'Premium' },
+            { id: 38, name: 'Camarão ao Alho e Óleo', categoria: 'Premium' },
+            { id: 39, name: 'Cordeiro ao Alho e Óleo', categoria: 'Premium' },
+            { id: 40, name: 'Cordeiro ao Molho de Queijos', categoria: 'Premium' },
+            { id: 41, name: 'Filé Acebolado', categoria: 'Premium' },
+            { id: 42, name: 'Filé ao Molho de Nata', categoria: 'Premium' },
+            { id: 43, name: 'Filé aos Quatro Queijos', categoria: 'Premium' },
+            { id: 44, name: 'Filé com Cebola Caramelizada', categoria: 'Premium' },
+            { id: 45, name: 'Filé com Cheedar', categoria: 'Premium' }
+        ],
+        doces: [
+            { id: 46, name: 'Chocolate', categoria: 'Doces' },
+            { id: 47, name: 'Chocolate Branco', categoria: 'Doces' },
+            { id: 48, name: 'Brigadeiro', categoria: 'Doces' },
+            { id: 49, name: 'Morango', categoria: 'Doces' },
+            { id: 50, name: 'Banana Nevada', categoria: 'Doces' }
+        ]
+    };
+
+    const bordas = [
+        { id: 'nenhuma', name: 'Sem Borda', price: 0.00 },
+        { id: 'requeijao', name: 'Requeijão', price: 18.00 },
+        { id: 'cheedar', name: 'Cheedar', price: 18.00 },
+        { id: 'avela', name: 'Avelã', price: 20.00 },
+        { id: 'chocolate', name: 'Chocolate ao Leite', price: 20.00 }
+    ];
+
+    // TABELA DE PREÇOS POR TAMANHO E CATEGORIA
+    const tabelaPrecos = {
+        pequena: {
+            classicas: 40.00,
+            casa: 59.90,
+            premium: 69.90,
+            doces: 40.00
+        },
+        media: {
+            classicas: 78.00,
+            casa: 89.90,
+            premium: 99.90,
+            doces: 78.00
+        },
+        grande: {
+            classicas: 90.00,
+            casa: 109.90,
+            premium: 129.90,
+            doces: 90.00
+        },
+        familia: {
+            classicas: 119.90,
+            casa: 129.90,
+            premium: 159.90,
+            doces: 119.90
+        }
+    };
+
+    const tamanhos = [
+        { id: 'pequena', name: 'Pequena (4 fatias)', maxSabores: 1 },
+        { id: 'media', name: 'Média (8 fatias)', maxSabores: 2 },
+        { id: 'grande', name: 'Grande (12 fatias)', maxSabores: 3 },
+        { id: 'familia', name: 'Família (16 fatias)', maxSabores: 4 }
+    ];
+
+    let cart = [];
+    let customPizzaBuilder = null;
+
+    // ETAPA 1: Selecionar Tamanho
+    function renderTamanhosSelection() {
+        const container = document.getElementById('pizzaBuilderView');
+        container.innerHTML = `
+                <div class="builder-section">
+                    <h3 style="color: var(--primary-dark); text-align: center; margin-bottom: 30px;">
+                        1️⃣ Escolha o Tamanho da Pizza
+                    </h3>
+                    <div class="tamanhos-grid">
+                        ${tamanhos.map(tamanho => `
+                            <button class="tamanho-btn" onclick="selectTamanho('${tamanho.id}', ${tamanho.maxSabores})">
+                                <div class="tamanho-name">${tamanho.name}</div>
+                                <div class="tamanho-info">até ${tamanho.maxSabores} sabor${tamanho.maxSabores > 1 ? 'es' : ''}</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+    }
+
+    // ETAPA 2: Selecionar Sabores
+    function selectTamanho(tamanhoId, maxSabores) {
+        customPizzaBuilder = {
+            tamanho: tamanhoId,
+            maxSabores: maxSabores,
+            sabores: [],
+            borda: 'nenhuma',
+            activeTab: 'classicas'
+        };
+        renderSaboresSelection();
+    }
+
+    function renderSaboresSelection() {
+        const container = document.getElementById('pizzaBuilderView');
+
+        container.innerHTML = `
+                <div class="builder-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: var(--primary-dark);">
+                            2️⃣ Escolha os Sabores (${customPizzaBuilder.sabores.length}/${customPizzaBuilder.maxSabores})
+                        </h3>
+                        <button class="btn-back" onclick="renderTamanhosSelection()">← Voltar</button>
+                    </div>
+                    
+                    <div class="sabores-tabs">
+                        <button class="sabor-tab ${customPizzaBuilder.activeTab === 'classicas' ? 'active' : ''}" 
+                                onclick="changeTab('classicas')">🍕 Clássicas</button>
+                        <button class="sabor-tab ${customPizzaBuilder.activeTab === 'casa' ? 'active' : ''}" 
+                                onclick="changeTab('casa')">🏠 Da Casa</button>
+                        <button class="sabor-tab ${customPizzaBuilder.activeTab === 'premium' ? 'active' : ''}" 
+                                onclick="changeTab('premium')">👑 Premium</button>
+                        <button class="sabor-tab ${customPizzaBuilder.activeTab === 'doces' ? 'active' : ''}" 
+                                onclick="changeTab('doces')">🍰 Doces</button>
+                    </div>
+                    
+                    <div class="sabores-grid" id="saboresGrid">
+                        <!-- Será preenchido dinamicamente -->
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button class="btn-continue" onclick="renderBordasSelection()" 
+                                ${customPizzaBuilder.sabores.length === 0 ? 'disabled' : ''}>
+                            Continuar para Bordas →
+                        </button>
+                    </div>
+                </div>
+            `;
+
+        displaySaboresByTab();
+    }
+
+    function changeTab(tab) {
+        customPizzaBuilder.activeTab = tab;
+        renderSaboresSelection();
+    }
+
+    function displaySaboresByTab() {
+        const saboresGrid = document.getElementById('saboresGrid');
+        const tamanhoId = customPizzaBuilder.tamanho;
+        const activeTab = customPizzaBuilder.activeTab;
+
+        const tabMap = {
+            'classicas': { categoria: 'Clássicas', key: 'classicas', data: saboresData.classicas },
+            'casa': { categoria: 'Da Casa', key: 'casa', data: saboresData.casa },
+            'premium': { categoria: 'Premium', key: 'premium', data: saboresData.premium },
+            'doces': { categoria: 'Doces', key: 'doces', data: saboresData.doces }
+        };
+
+        const tabInfo = tabMap[activeTab];
+        const precoCategoria = tabelaPrecos[tamanhoId][tabInfo.key];
+
+        let html = `
+                <div style="grid-column: 1 / -1; margin-bottom: 15px;">
+                    <div style="color: var(--primary-dark); font-size: 15px; font-weight: bold; text-align: center; padding: 10px; background-color: var(--bg-light); border-radius: 4px;">
+                        Preço: R$ ${precoCategoria.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+        tabInfo.data.forEach(sabor => {
+            const isSelected = customPizzaBuilder.sabores.some(s => s.id === sabor.id);
+            html += `
+                    <div class="sabor-card ${isSelected ? 'selected' : ''}" 
+                         onclick="toggleSabor(${sabor.id}, '${sabor.name}', '${sabor.categoria}')">
+                        <div class="sabor-name">${sabor.name}</div>
+                        ${isSelected ? '<div class="sabor-check">✓</div>' : ''}
+                    </div>
+                `;
+        });
+
+        saboresGrid.innerHTML = html;
+    }
+
+    function toggleSabor(id, name, categoria) {
+        const index = customPizzaBuilder.sabores.findIndex(s => s.id === id);
+
+        if (index > -1) {
+            customPizzaBuilder.sabores.splice(index, 1);
+        } else {
+            if (customPizzaBuilder.sabores.length < customPizzaBuilder.maxSabores) {
+                customPizzaBuilder.sabores.push({ id, name, categoria });
+            } else {
+                showNotification('Máximo de sabores atingido!');
+                return;
+            }
+        }
+
+        renderSaboresSelection();
+    }
+
+    // ETAPA 3: Selecionar Borda
+    function renderBordasSelection() {
+        const container = document.getElementById('pizzaBuilderView');
+
+        container.innerHTML = `
+                <div class="builder-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <h3 style="color: var(--primary-dark);">
+                            3️⃣ Escolha a Borda
+                        </h3>
+                        <button class="btn-back" onclick="renderSaboresSelection()">← Voltar</button>
+                    </div>
+                    
+                    <div class="bordas-grid">
+                        ${bordas.map(borda => {
+            const isSelected = customPizzaBuilder.borda === borda.id;
+            return `
+                                <div class="borda-card ${isSelected ? 'selected' : ''}" 
+                                     onclick="selectBorda('${borda.id}')">
+                                    <div class="borda-name">${borda.name}</div>
+                                    <div class="borda-price">R$ ${borda.price.toFixed(2)}</div>
+                                    ${isSelected ? '<div class="borda-check">✓</div>' : ''}
+                                </div>
+                            `;
+        }).join('')}
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button class="btn-finalize" onclick="finalizePizza()">
+                            Adicionar ao Carrinho
+                        </button>
+                    </div>
+                </div>
+            `;
+    }
+
+    function selectBorda(bordaId) {
+        customPizzaBuilder.borda = bordaId;
+        renderBordasSelection();
+    }
+
+    function finalizePizza() {
+        const tamanho = tamanhos.find(t => t.id === customPizzaBuilder.tamanho);
+        const borda = bordas.find(b => b.id === customPizzaBuilder.borda);
+
+        let categoriaFinal = 'classicas';
+
+        for (const sabor of customPizzaBuilder.sabores) {
+            if (sabor.categoria === 'Premium') {
+                categoriaFinal = 'premium';
+                break;
+            } else if (sabor.categoria === 'Da Casa') {
+                categoriaFinal = 'casa';
+            } else if (sabor.categoria === 'Doces' && categoriaFinal === 'classicas') {
+                categoriaFinal = 'doces';
+            }
+        }
+
+        const precoFinal = tabelaPrecos[tamanho.id][categoriaFinal] + borda.price;
+
+        const pizzaCustomizada = {
+            id: Date.now(),
+            name: `Pizza Personalizada - ${customPizzaBuilder.sabores.map(s => s.name).join(', ')}`,
+            tamanho: tamanho.name,
+            sabores: customPizzaBuilder.sabores,
+            borda: borda.name,
+            price: precoFinal,
+            quantity: 1
+        };
+
+        cart.push(pizzaCustomizada);
+        updateCart();
+        showNotification('Pizza adicionada ao carrinho!');
+        renderTamanhosSelection();
+        customPizzaBuilder = null;
+    }
+
+    function updateCart() {
+        const cartCount = document.getElementById('cartCount');
+        const cartItems = document.getElementById('cartItems');
+        const subtotal = document.getElementById('subtotal');
+        const total = document.getElementById('total');
+
+        cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        if (cart.length === 0) {
+            cartItems.innerHTML = '<div class="empty-cart">Seu carrinho está vazio</div>';
+            subtotal.textContent = 'R$ 0,00';
+            total.textContent = 'R$ 8,00';
+            return;
+        }
+
+        cartItems.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.tamanho}</div>
+                        <div class="cart-item-size">Sabores: ${item.sabores ? item.sabores.map(s => s.name).join(', ') : 'N/A'}</div>
+                        <div class="cart-item-size" style="font-size: 11px; color: #666; margin-top: 4px;">
+                            Borda: ${item.borda}
+                        </div>
+                        <div class="cart-item-price">R$ ${(item.price * item.quantity).toFixed(2)}</div>
+                    </div>
+                    <div class="cart-controls">
+                        <button class="qty-btn" onclick="updateQuantity(${index}, -1)">−</button>
+                        <div class="qty-display">${item.quantity}</div>
+                        <button class="qty-btn" onclick="updateQuantity(${index}, 1)">+</button>
+                        <button class="btn-remove" onclick="removeFromCart(${index})">✕</button>
+                    </div>
+                </div>
+            `).join('');
+
+        const subtotalValue = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const delivery = 8.00;
+        const totalValue = subtotalValue + delivery;
+
+        subtotal.textContent = `R$ ${subtotalValue.toFixed(2)}`;
+        total.textContent = `R$ ${totalValue.toFixed(2)}`;
+    }
+
+    function updateQuantity(index, change) {
+        cart[index].quantity += change;
+        if (cart[index].quantity <= 0) {
+            removeFromCart(index);
+        } else {
+            updateCart();
+        }
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCart();
+    }
+
+    function toggleCart() {
+        document.getElementById('cartSidebar').classList.toggle('active');
+    }
+
+    function checkout() {
+        if (cart.length === 0) {
+            alert('Adicione itens ao carrinho');
+            return;
+        }
+        alert('Pedido finalizado! Total: R$ ' + document.getElementById('total').textContent);
+        cart = [];
+        updateCart();
+        toggleCart();
+    }
+
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 2000);
+    }
+
+    // Initial render
+    renderTamanhosSelection();
+</script>
+</body>
 </html>
