@@ -1,5 +1,5 @@
 // packages/backend/src/routes/pedidos.routes.ts
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express'; // 🆕 Adicionar Request
 import { PedidosService } from '../services/pedido.services';
 import { autenticar } from '../middlewares/auth.middlewares';
 import { validate } from '../middlewares/validate.middlewares';
@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 const service = new PedidosService();
-const prisma = new PrismaClient();
+const prisma = new PrismaClient(); // 🆕 Usar prisma diretamente
 
 // ========================================
 // POST /api/pedidos
@@ -235,6 +235,125 @@ router.get('/admin/estatisticas', autenticar, async (req: AuthenticatedRequest, 
     } catch (error: any) {
         console.error('Erro ao obter estatísticas:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ========================================
+// POST /api/pedidos/web
+// Criar pedido vindo do site (sem autenticação obrigatória)
+// ========================================
+router.post('/web', async (req: Request, res: Response) => {
+    try {
+        const { customerId, customer, items, deliveryFee, subtotal, total } = req.body;
+
+        // Validações básicas
+        if (!customer || !customer.name || !customer.phone || !customer.address) {
+            return res.status(400).json({
+                error: 'Dados do cliente são obrigatórios (name, phone, address)'
+            });
+        }
+
+        if (!items || items.length === 0) {
+            return res.status(400).json({
+                error: 'Pedido precisa ter pelo menos 1 item'
+            });
+        }
+
+        if (!total || total <= 0) {
+            return res.status(400).json({
+                error: 'Total do pedido inválido'
+            });
+        }
+
+        // Buscar ou criar cliente
+        const phoneCleaned = customer.phone.replace(/\D/g, '');
+
+        let cliente = await prisma.usuario.findFirst({
+            where: { telefone: phoneCleaned }
+        });
+
+        if (!cliente) {
+            cliente = await prisma.usuario.create({
+                data: {
+                    nome: customer.name,
+                    telefone: phoneCleaned,
+                    email: `${phoneCleaned}@cliente.bambinos`,
+                    senha: 'sem-senha-web',
+                    papel: 'CLIENTE',
+                    ativo: true
+                }
+            });
+        }
+
+        // Montar observações detalhadas
+        const observacoesDetalhadas = items.map((item: any, index: number) => {
+            return `${index + 1}. ${item.size}
+Sabores: ${item.flavors.join(', ')}
+Borda: ${item.border}
+Quantidade: ${item.quantity}x
+Valor unitário: R$ ${item.unitPrice.toFixed(2)}
+Subtotal: R$ ${(item.unitPrice * item.quantity).toFixed(2)}`;
+        }).join('\n\n');
+
+        // Criar pedido COM A SINTAXE CORRETA DO PRISMA
+        const pedido = await prisma.pedido.create({
+            data: {
+                usuario: {
+                    connect: { id: cliente.id }
+                },
+                status: 'PENDENTE',
+                valorTotal: total,
+                valorEntrega: deliveryFee,
+                valorDesconto: 0,
+                enderecoEntrega: customer.address,
+                observacoes: `PEDIDO DO SITE WEB\n\n${observacoesDetalhadas}\n\nSubtotal: R$ ${subtotal.toFixed(2)}\nEntrega: R$ ${deliveryFee.toFixed(2)}\nTotal: R$ ${total.toFixed(2)}`,
+                itens: {
+                    create: items.map((item: any) => ({
+                        quantidade: item.quantity,
+                        precoUnitario: item.unitPrice,
+                        observacoes: `${item.size} | Sabores: ${item.flavors.join(', ')} | Borda: ${item.border}`
+                    }))
+                }
+            },
+            include: {
+                itens: true,
+                usuario: {
+                    select: {
+                        id: true,
+                        nome: true,
+                        telefone: true,
+                        email: true
+                    }
+                }
+            }
+        });
+
+        console.log('📦 Novo pedido WEB criado:', {
+            id: pedido.id,
+            cliente: cliente.nome,
+            telefone: cliente.telefone,
+            endereco: customer.address,
+            total: pedido.valorTotal,
+            items: pedido.itens.length
+        });
+
+        return res.status(201).json({
+            id: pedido.id,
+            status: pedido.status,
+            valorTotal: pedido.valorTotal,
+            valorEntrega: pedido.valorEntrega,
+            criadoEm: pedido.criadoEm,
+            cliente: {
+                nome: pedido.usuario.nome,
+                telefone: pedido.usuario.telefone
+            },
+            items: pedido.itens
+        });
+    } catch (error) {
+        console.error('❌ Erro ao criar pedido web:', error);
+        return res.status(500).json({
+            error: 'Erro ao processar pedido. Tente novamente.'
+        });
     }
 });
 

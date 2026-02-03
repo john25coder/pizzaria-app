@@ -60,13 +60,80 @@ function toggleCart() {
     document.getElementById('cartSidebar').classList.toggle('active');
 }
 
-function checkout() {
+async function checkout() {
     if (cart.length === 0) {
-        alert('Adicione itens ao carrinho');
+        alert('Adicione itens ao carrinho antes de finalizar o pedido.');
         return;
     }
-    alert('Pedido finalizado! Total: ' + document.getElementById('total').textContent);
-    cart = [];
-    updateCart();
-    toggleCart();
+
+    const currentUser = JSON.parse(localStorage.getItem('bambinos_current_user') || 'null');
+
+    if (!currentUser) {
+        alert('Sua sessão expirou. Por favor, faça login novamente.');
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Calcular valores
+    const subtotalValue = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const delivery = 8.0;
+    const totalValue = subtotalValue + delivery;
+
+    // Montar payload para API
+    const payload = {
+        customerId: currentUser.id || null,
+        customer: {
+            name: currentUser.name,
+            phone: currentUser.phone,
+            address: currentUser.address
+        },
+        items: cart.map(item => ({
+            name: item.name,
+            size: item.tamanho,
+            flavors: item.sabores ? item.sabores.map(s => s.name) : [],
+            border: item.borda,
+            unitPrice: item.price,
+            quantity: item.quantity
+        })),
+        deliveryFee: delivery,
+        subtotal: subtotalValue,
+        total: totalValue
+    };
+
+    try {
+        console.log('📤 Enviando pedido para API:', payload);
+
+        const response = await fetch('http://localhost:3333/api/pedidos/web', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            alert(error.error || 'Erro ao enviar pedido. Tente novamente.');
+            return;
+        }
+
+        const order = await response.json();
+
+        console.log('✅ Pedido criado com sucesso:', order);
+
+        alert(`✅ Pedido enviado com sucesso!
+
+📦 Número do pedido: ${order.id}
+💰 Total: R$ ${order.valorTotal.toFixed(2)}
+📍 Endereço: ${currentUser.address}
+
+Entraremos em contato em breve pelo telefone ${currentUser.phone}!`);
+
+        // Limpar carrinho
+        cart = [];
+        updateCart();
+        toggleCart();
+    } catch (err) {
+        console.error('❌ Erro ao conectar com servidor:', err);
+        alert('Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:3333');
+    }
 }
+
