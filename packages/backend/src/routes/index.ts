@@ -6,6 +6,8 @@ import pedidosRoutes from '../routes/pedidos.routes';
 import pagamentosRoutes from '../routes/pagamentos.routes';
 import healthRoutes from '../routes/health.routes';
 import clientesRoutes from './cliente.routes';
+import whatsappRoutes from '../routes/whatsapp.routes';
+import pedidosWhatsappRoutes from '../routes/pedidos-whatsapp.routes';
 
 
 const router = Router();
@@ -17,5 +19,8 @@ router.use('/pedidos', pedidosRoutes);
 router.use('/pagamentos', pagamentosRoutes);
 router.use('/health', healthRoutes);
 router.use('/clientes', clientesRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/pedidos', pedidosWhatsappRoutes);
+
 
 export default router;
