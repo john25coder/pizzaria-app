@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { AuthService } from '../services/auth.services';
-import { autenticar } from '../middlewares/auth.middlewares';
+import { autenticar } from '../middlewares/auth.middlewares'
+import { UsuarioService } from '../services/usuario.service';
 import { limiterLogin, limiterRegister } from '../middlewares/security.middleware';
 import { registroSchema, loginSchema, validar } from '../util/validation';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { CriarUsuarioDTO, LoginDTO } from '../types/dtos';
 
 const router = Router();
-const service = new AuthService();
+const service = new UsuarioService();
 
 // ========================================
 // POST /api/auth/register
@@ -19,7 +19,7 @@ router.post('/register', limiterRegister, async (req: Request, res: Response) =>
         // ✅ Validar dados com Zod
         const dados = await validar<CriarUsuarioDTO>(registroSchema, req.body as unknown);
 
-        const usuario = await service.registrar(dados);
+        const usuario = await service.criar(dados);
 
         res.status(201).json({
             success: true,

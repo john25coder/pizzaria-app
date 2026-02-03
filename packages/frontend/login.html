@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Pizzaria Bambinos</title>
+    <style>
+        :root {
+            --primary-dark: #6B4423;
+            --secondary-gold: #D4AF37;
+            --bg-light: #F5F1E8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: radial-gradient(circle at top, #D4AF37 0, #6B4423 45%, #2C2C2C 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+        .login-card {
+            background-color: #F5F1E8;
+            border-radius: 12px;
+            padding: 40px 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+        .login-logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        .login-title {
+            text-align: center;
+            font-size: 22px;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+        .login-subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #777;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 15px;
+            font-weight: bold;
+            color: #999;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            color: var(--primary-dark);
+            border-bottom-color: var(--primary-dark);
+        }
+        .form-content { display: none; }
+        .form-content.active { display: block; }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--primary-dark);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Georgia', serif;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--secondary-gold);
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            background-color: #5a3a1f;
+        }
+        .login-footer-text {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-logo">🍕 BAMBINOS</div>
+        <h1 class="login-title">Bem-vindo</h1>
+        <p class="login-subtitle">Faça login ou crie sua conta</p>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">Entrar</button>
+            <button class="tab" onclick="switchTab('register')">Cadastrar</button>
+        </div>
+
+        <!-- FORM DE LOGIN -->
+        <div id="loginForm" class="form-content active">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginPhone">Telefone</label>
+                    <input type="tel" id="loginPhone" placeholder="(53) 9 9999-9999" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Senha</label>
+                    <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+                </div>
+                <button type="submit" class="btn-submit">Entrar</button>
+            </form>
+        </div>
+
+        <!-- FORM DE CADASTRO -->
+        <div id="registerForm" class="form-content">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="registerName">Nome completo</label>
+                    <input type="text" id="registerName" placeholder="Seu nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPhone">Telefone</label>
+                    <input type="tel" id="registerPhone" placeholder="(53) 9 9999-9999" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Senha</label>
+                    <input type="password" id="registerPassword" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerConfirmPassword">Confirmar senha</label>
+                    <input type="password" id="registerConfirmPassword" placeholder="Digite novamente" required>
+                </div>
+                <button type="submit" class="btn-submit">Criar Conta</button>
+            </form>
+        </div>
+
+        <p class="login-footer-text">
+            Seus dados estão seguros conosco 🔒
+        </p>
+    </div>
+</div>
+
+<script src="src/js/login.js"></script>
+</body>
+</html>
