@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { CriarUsuarioDTO, AtualizarUsuarioDTO, Usuario } from '../types/auth.types';
+import jwt from 'jsonwebtoken';
+import { gerarToken } from '../util/jwt';
 
 const prisma = new PrismaClient();
 
@@ -201,5 +203,35 @@ export class UsuarioService {
             console.error('Erro ao buscar usuário por CPF:', error);
             throw new Error('Erro ao buscar usuário');
         }
+    }
+    async login(telefone: string, senha: string) {
+        // Buscar usuário por telefone
+        const usuario = await prisma.usuario.findUnique({
+            where: { telefone }
+        });
+
+        if (!usuario) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        // Verificar se está ativo
+        if (!usuario.ativo) {
+            throw new Error('Usuário desativado');
+        }
+
+        // Verificar senha
+        const senhaValida = await bcrypt.compare(senha, usuario.senha);
+
+        if (!senhaValida) {
+            throw new Error('Senha inválida');
+        }
+
+        // ✅ Gerar token JWT usando a função utilitária
+        const token = gerarToken(usuario.id, usuario.email, usuario.papel as 'CLIENTE' | 'ADMIN');
+
+        return {
+            usuario: this.removerSenha(usuario),
+            token
+        };
     }
 }

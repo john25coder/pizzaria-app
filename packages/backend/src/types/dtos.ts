@@ -8,10 +8,10 @@ export interface CriarUsuarioDTO {
     cpf?: string;
 }
 
+// ✅ CORRETO - Login apenas com telefone
 export interface LoginDTO {
-    email: string;
+    telefone: string;
     senha: string;
-    cpf?: string;
 }
 
 export interface AtualizarUsuarioDTO {
@@ -53,15 +53,13 @@ export interface CriarPagamentoDTO {
 export interface ConfirmarPagamentoDTO {
     paymentIntentId: string;
 }
+
 export interface CriarPaymentIntentDTO {
     amount: number;
     currency?: string;
     descricao?: string;
 }
 
-export interface ConfirmarPagamentoDTO {
-    paymentIntentId: string;
-}
 export interface AtualizarPedidoDTO {
     status?: string;
     endereco?: string;

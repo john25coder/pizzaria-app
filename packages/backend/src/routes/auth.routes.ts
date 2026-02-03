@@ -5,6 +5,7 @@ import { limiterLogin, limiterRegister } from '../middlewares/security.middlewar
 import { registroSchema, loginSchema, validar } from '../util/validation';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { CriarUsuarioDTO, LoginDTO } from '../types/dtos';
+import { gerarToken } from '../util/jwt';
 
 const router = Router();
 const service = new UsuarioService();
@@ -47,46 +48,22 @@ router.post('/login', limiterLogin, async (req: Request, res: Response) => {
         // ✅ Validar dados com Zod
         const dados = await validar<LoginDTO>(loginSchema, req.body as unknown);
 
-        // Buscar usuário pelo CPF ou email
-        const usuario = await service.buscarPorCPF(dados.cpf);
-
-        if (!usuario) {
-            return res.status(401).json({ error: 'CPF ou senha inválidos' });
-        }
-
-        // Verificar senha (você deve ter um método para isso)
-        const senhaValida = await service.verificarSenha(usuario.id, dados.senha);
-
-        if (!senhaValida) {
-            return res.status(401).json({ error: 'CPF ou senha inválidos' });
-        }
-
-        // Verificar se usuário está ativo
-        if (!usuario.ativo) {
-            return res.status(403).json({ error: 'Usuário desativado' });
-        }
-
-        // Gerar token JWT (você precisa implementar isso)
-        const token = gerarToken(usuario.id);
+        // ✅ Login com telefone
+        const resultado = await service.login(dados.telefone, dados.senha);
 
         res.json({
             success: true,
             message: 'Login realizado com sucesso',
             data: {
-                usuario: {
-                    id: usuario.id,
-                    nome: usuario.nome,
-                    cpf: usuario.cpf,
-                    telefone: usuario.telefone
-                },
-                token: token
+                usuario: resultado.usuario,
+                token: resultado.token
             }
         });
     } catch (error: any) {
         console.error('Erro ao fazer login:', error);
 
         if (error.message.includes('não encontrado') || error.message.includes('inválida')) {
-            return res.status(401).json({ error: 'CPF ou senha inválidos' });
+            return res.status(401).json({ error: 'Telefone ou senha inválida' });
         }
 
         if (error.message.includes('desativado')) {
@@ -154,7 +131,7 @@ router.post('/refresh', autenticar, async (req: AuthenticatedRequest, res: Respo
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
 
-        // Gerar novo token
+        // ✅ Gerar novo token usando a função importada
         const novoToken = gerarToken(req.usuario.id);
 
         res.json({
@@ -167,20 +144,4 @@ router.post('/refresh', autenticar, async (req: AuthenticatedRequest, res: Respo
         res.status(500).json({ error: 'Erro ao renovar token' });
     }
 });
-
-// ========================================
-// Função auxiliar para gerar token JWT
-// ========================================
-
-function gerarToken(usuarioId: number): string {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'bambinos_secret_key_2026';
-
-    return jwt.sign(
-        { id: usuarioId },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-    );
-}
-
 export default router;

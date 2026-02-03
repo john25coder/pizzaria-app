@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
 // ✅ Schemas de validação com Zod
+export const telefoneSchema = z
+    .string()
+    .min(10, 'Telefone inválido')
+    .max(15, 'Telefone inválido')
+    .regex(/^\(?[1-9]{2}\)? ?9?[0-9]{4}-?[0-9]{4}$/, 'Formato de telefone inválido');
+
 export const emailSchema = z
     .string()
     .email('Email inválido')
@@ -21,14 +27,10 @@ export const senhaSchema = z
     .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
     .regex(/[@$!%*?&]/, 'Senha deve conter pelo menos um caractere especial (@$!%*?&)');
 
-// ✅ Schema de login (aceita email OU cpf)
+// ✅ Schema de login - APENAS COM TELEFONE
 export const loginSchema = z.object({
-    email: emailSchema.optional(),
-    cpf: cpfSchema.optional(),
+    telefone: telefoneSchema,
     senha: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres')
-}).refine(data => data.email || data.cpf, {
-    message: 'Email ou CPF é obrigatório',
-    path: ['email']
 });
 
 // ✅ Schema de registro completo
@@ -37,7 +39,7 @@ export const registroSchema = z.object({
     cpf: cpfSchema.optional(),
     senha: senhaSchema,
     nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100),
-    telefone: z.string().min(10, 'Telefone inválido').optional()
+    telefone: telefoneSchema
 });
 
 // ✅ Função para validar com tipagem genérica
