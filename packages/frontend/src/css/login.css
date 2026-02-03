@@ -1,0 +1,119 @@
+.login-body {
+    font-family: 'Georgia', serif;
+    background: radial-gradient(circle at top, #D4AF37 0, #6B4423 45%, #2C2C2C 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+}
+
+.login-card {
+    background-color: #F5F1E8;
+    border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+.login-logo {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
+
+.login-title {
+    text-align: center;
+    font-size: 22px;
+    color: var(--primary-dark);
+    margin-bottom: 6px;
+}
+
+.login-subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 24px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 13px;
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.form-group input {
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--secondary-gold);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25);
+}
+
+.login-button {
+    margin-top: 8px;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-dark);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.login-button:hover {
+    background-color: #5a3a1f;
+}
+
+.login-button:active {
+    transform: scale(0.98);
+}
+
+.login-footer-text {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+    .login-card {
+        padding: 24px 18px;
+    }
+
+    .login-logo {
+        font-size: 22px;
+    }
+}

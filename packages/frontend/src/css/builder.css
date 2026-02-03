@@ -1,0 +1,210 @@
+.builder-section {
+    background-color: white;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.tamanhos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.tamanho-btn {
+    padding: 25px;
+    border: 2px solid var(--border-subtle);
+    background-color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Georgia', serif;
+}
+
+.tamanho-btn:hover {
+    border-color: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.15);
+    transform: translateY(-2px);
+}
+
+.tamanho-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+}
+
+.tamanho-info {
+    font-size: 13px;
+    color: #999;
+}
+
+.sabores-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-subtle);
+}
+
+.sabor-tab {
+    padding: 12px 20px;
+    background-color: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    font-weight: bold;
+    color: #999;
+    transition: all 0.3s;
+}
+
+.sabor-tab.active {
+    color: var(--primary-dark);
+    border-bottom-color: var(--primary-dark);
+}
+
+.sabor-tab:hover {
+    color: var(--primary-dark);
+}
+
+.sabores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.sabor-card {
+    padding: 15px;
+    border: 2px solid var(--border-subtle);
+    background-color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    position: relative;
+    font-family: 'Georgia', serif;
+}
+
+.sabor-card:hover {
+    border-color: var(--primary-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.sabor-card.selected {
+    background-color: var(--primary-dark);
+    color: white;
+    border-color: var(--primary-dark);
+}
+
+.sabor-name {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.sabor-price {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.sabor-check {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.bordas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.borda-card {
+    padding: 20px;
+    border: 2px solid var(--border-subtle);
+    background-color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    position: relative;
+    font-family: 'Georgia', serif;
+}
+
+.borda-card:hover {
+    border-color: var(--primary-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.borda-card.selected {
+    background-color: var(--secondary-gold);
+    border-color: var(--secondary-gold);
+    color: white;
+}
+
+.borda-name {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.borda-price {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.borda-check {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.btn-back {
+    padding: 10px 16px;
+    background-color: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    color: var(--primary-dark);
+    transition: all 0.3s;
+    font-size: 13px;
+}
+
+.btn-back:hover {
+    background-color: var(--bg-light);
+    border-color: var(--primary-dark);
+}
+
+.btn-continue,
+.btn-finalize {
+    padding: 14px 32px;
+    background-color: var(--primary-dark);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Georgia', serif;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-continue:hover:not(:disabled),
+.btn-finalize:hover {
+    background-color: #5a3a1f;
+}
+
+.btn-continue:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

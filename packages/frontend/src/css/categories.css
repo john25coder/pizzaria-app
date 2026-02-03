@@ -1,0 +1,27 @@
+.categories {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    justify-content: center;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: white;
+    overflow-x: auto;
+}
+
+.category-btn {
+    padding: 10px 24px;
+    border: 1px solid var(--primary-dark);
+    background-color: white;
+    color: var(--primary-dark);
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 4px;
+    font-family: 'Georgia', serif;
+    font-weight: 500;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    background-color: var(--primary-dark);
+    color: white;
+}
