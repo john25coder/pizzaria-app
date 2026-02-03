@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { autenticar } from '../middlewares/auth.middlewares'
+import { autenticar } from '../middlewares/auth.middlewares';
 import { UsuarioService } from '../services/usuario.service';
 import { limiterLogin, limiterRegister } from '../middlewares/security.middleware';
 import { registroSchema, loginSchema, validar } from '../util/validation';
@@ -47,21 +47,46 @@ router.post('/login', limiterLogin, async (req: Request, res: Response) => {
         // ✅ Validar dados com Zod
         const dados = await validar<LoginDTO>(loginSchema, req.body as unknown);
 
-        const resultado = await service.login(dados.email, dados.senha);
+        // Buscar usuário pelo CPF ou email
+        const usuario = await service.buscarPorCPF(dados.cpf);
+
+        if (!usuario) {
+            return res.status(401).json({ error: 'CPF ou senha inválidos' });
+        }
+
+        // Verificar senha (você deve ter um método para isso)
+        const senhaValida = await service.verificarSenha(usuario.id, dados.senha);
+
+        if (!senhaValida) {
+            return res.status(401).json({ error: 'CPF ou senha inválidos' });
+        }
+
+        // Verificar se usuário está ativo
+        if (!usuario.ativo) {
+            return res.status(403).json({ error: 'Usuário desativado' });
+        }
+
+        // Gerar token JWT (você precisa implementar isso)
+        const token = gerarToken(usuario.id);
 
         res.json({
             success: true,
             message: 'Login realizado com sucesso',
             data: {
-                usuario: resultado.usuario,
-                token: resultado.token
+                usuario: {
+                    id: usuario.id,
+                    nome: usuario.nome,
+                    cpf: usuario.cpf,
+                    telefone: usuario.telefone
+                },
+                token: token
             }
         });
     } catch (error: any) {
         console.error('Erro ao fazer login:', error);
 
         if (error.message.includes('não encontrado') || error.message.includes('inválida')) {
-            return res.status(401).json({ error: 'Email ou senha inválida' });
+            return res.status(401).json({ error: 'CPF ou senha inválidos' });
         }
 
         if (error.message.includes('desativado')) {
@@ -89,15 +114,28 @@ router.post('/logout', (req: Request, res: Response) => {
 // Obter dados do usuário autenticado
 // ========================================
 
-router.get('/me', autenticar, (req: AuthenticatedRequest, res: Response) => {
+router.get('/me', autenticar, async (req: AuthenticatedRequest, res: Response) => {
     try {
         if (!req.usuario) {
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
 
+        // Buscar dados completos do usuário
+        const usuario = await service.buscarPorId(req.usuario.id);
+
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
         res.json({
             success: true,
-            data: req.usuario
+            data: {
+                id: usuario.id,
+                nome: usuario.nome,
+                cpf: usuario.cpf,
+                telefone: usuario.telefone,
+                ativo: usuario.ativo
+            }
         });
     } catch (error) {
         console.error('Erro ao obter usuário:', error);
@@ -116,7 +154,8 @@ router.post('/refresh', autenticar, async (req: AuthenticatedRequest, res: Respo
             return res.status(401).json({ error: 'Usuário não autenticado' });
         }
 
-        const novoToken = await service.renovarToken(req.usuario.id);
+        // Gerar novo token
+        const novoToken = gerarToken(req.usuario.id);
 
         res.json({
             success: true,
@@ -128,5 +167,20 @@ router.post('/refresh', autenticar, async (req: AuthenticatedRequest, res: Respo
         res.status(500).json({ error: 'Erro ao renovar token' });
     }
 });
+
+// ========================================
+// Função auxiliar para gerar token JWT
+// ========================================
+
+function gerarToken(usuarioId: number): string {
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'bambinos_secret_key_2026';
+
+    return jwt.sign(
+        { id: usuarioId },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+}
 
 export default router;

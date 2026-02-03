@@ -7,6 +7,12 @@ export const emailSchema = z
     .toLowerCase()
     .trim();
 
+export const cpfSchema = z
+    .string()
+    .min(11, 'CPF inválido')
+    .max(14, 'CPF inválido')
+    .regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'Formato de CPF inválido');
+
 export const senhaSchema = z
     .string()
     .min(8, 'Senha deve ter no mínimo 8 caracteres')
@@ -15,19 +21,26 @@ export const senhaSchema = z
     .regex(/[0-9]/, 'Senha deve conter pelo menos um número')
     .regex(/[@$!%*?&]/, 'Senha deve conter pelo menos um caractere especial (@$!%*?&)');
 
+// ✅ Schema de login (aceita email OU cpf)
 export const loginSchema = z.object({
-    email: emailSchema,
-    senha: z.string().min(1, 'Senha é obrigatória')
+    email: emailSchema.optional(),
+    cpf: cpfSchema.optional(),
+    senha: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres')
+}).refine(data => data.email || data.cpf, {
+    message: 'Email ou CPF é obrigatório',
+    path: ['email']
 });
 
+// ✅ Schema de registro completo
 export const registroSchema = z.object({
     email: emailSchema,
+    cpf: cpfSchema.optional(),
     senha: senhaSchema,
     nome: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(100),
-    telefone: z.string().optional()
+    telefone: z.string().min(10, 'Telefone inválido').optional()
 });
 
-// ✅ Função para validar com tipagem genérica CORRIGIDA
+// ✅ Função para validar com tipagem genérica
 export async function validar<T>(schema: z.ZodSchema<T>, dados: unknown): Promise<T> {
     try {
         return (await schema.parseAsync(dados)) as T;

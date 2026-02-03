@@ -1,116 +1,218 @@
-// Login/Registro com telefone e senha
-let currentTab = 'login';
+// ===== LOGIN E CADASTRO SIMPLIFICADO (CPF, TELEFONE, SENHA) =====
 
+// Alternar entre abas de Login e Cadastro
 function switchTab(tab) {
-    currentTab = tab;
+    const loginForm = document.getElementById('loginForm');
+    const cadastroForm = document.getElementById('cadastroForm');
+    const tabBtns = document.querySelectorAll('.tab-btn');
 
-    // Atualizar tabs
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-
-    // Atualizar forms
-    document.querySelectorAll('.form-content').forEach(f => f.classList.remove('active'));
     if (tab === 'login') {
-        document.getElementById('loginForm').classList.add('active');
+        loginForm.classList.add('active');
+        cadastroForm.classList.remove('active');
+        tabBtns[0].classList.add('active');
+        tabBtns[1].classList.remove('active');
     } else {
-        document.getElementById('registerForm').classList.add('active');
+        loginForm.classList.remove('active');
+        cadastroForm.classList.add('active');
+        tabBtns[0].classList.remove('active');
+        tabBtns[1].classList.add('active');
     }
 }
 
-async function handleLogin(event) {
-    event.preventDefault();
+// Máscaras de formatação
+document.getElementById('loginCPF')?.addEventListener('input', function(e) {
+    e.target.value = formatCPF(e.target.value);
+});
 
-    const phone = document.getElementById('loginPhone').value.trim();
-    const password = document.getElementById('loginPassword').value;
+document.getElementById('cadastroCPF')?.addEventListener('input', function(e) {
+    e.target.value = formatCPF(e.target.value);
+});
 
-    const phoneNumbers = phone.replace(/\D/g, '');
-    if (phoneNumbers.length < 10) {
-        alert('Telefone inválido. Digite um número completo.');
+document.getElementById('cadastroTelefone')?.addEventListener('input', function(e) {
+    e.target.value = formatTelefone(e.target.value);
+});
+
+// Formato CPF: 000.000.000-00
+function formatCPF(value) {
+    value = value.replace(/\D/g, '');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return value;
+}
+
+// Formato Telefone: (00) 0 0000-0000
+function formatTelefone(value) {
+    value = value.replace(/\D/g, '');
+    value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+    return value;
+}
+
+// Validar CPF
+function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, '');
+
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) {
+        return false;
+    }
+
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+        soma += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let digito1 = 11 - (soma % 11);
+    if (digito1 > 9) digito1 = 0;
+
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+        soma += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    let digito2 = 11 - (soma % 11);
+    if (digito2 > 9) digito2 = 0;
+
+    return (parseInt(cpf.charAt(9)) === digito1 && parseInt(cpf.charAt(10)) === digito2);
+}
+
+// ===== PROCESSAR LOGIN =====
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const cpf = document.getElementById('loginCPF').value.replace(/\D/g, '');
+    const senha = document.getElementById('loginSenha').value;
+
+    // Validações básicas
+    if (!validarCPF(cpf)) {
+        alert('❌ CPF inválido!');
+        return;
+    }
+
+    if (senha.length < 6) {
+        alert('❌ Senha muito curta!');
         return;
     }
 
     try {
+        // Tentar fazer login no backend
         const response = await fetch('http://localhost:3333/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                telefone: phoneNumbers,
-                senha: password
-            })
+            body: JSON.stringify({ cpf, senha })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            alert(error.error || 'Erro ao fazer login. Verifique seus dados.');
+            alert(error.error || '❌ CPF ou senha incorretos.');
             return;
         }
 
-        const data = await response.json();
-        const user = data.data?.usuario || data.usuario;
+        const userData = await response.json();
 
-        localStorage.setItem('bambinos_current_user', JSON.stringify(user));
-        localStorage.setItem('bambinos_token', data.token || '');
+        // Salvar no localStorage
+        localStorage.setItem('bambinos_current_user', JSON.stringify(userData));
 
-        console.log('✅ Login realizado com sucesso:', user);
+        console.log('✅ Login realizado com sucesso!');
 
-        window.location.href = 'index.html';
+        // Redirecionar para o app
+        window.location.href = '../index.html';
+
     } catch (err) {
         console.error('❌ Erro ao conectar:', err);
-        alert('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+
+        // Fallback: verificar no localStorage
+        const usuariosSalvos = JSON.parse(localStorage.getItem('bambinos_usuarios')) || [];
+        const usuario = usuariosSalvos.find(u => u.cpf === cpf && u.senha === senha);
+
+        if (usuario) {
+            localStorage.setItem('bambinos_current_user', JSON.stringify(usuario));
+            window.location.href = '../index.html';
+        } else {
+            alert('❌ CPF ou senha incorretos.\n\nVerifique se o backend está rodando em http://localhost:3333');
+        }
     }
-}
+});
 
-async function handleRegister(event) {
-    event.preventDefault();
+// ===== PROCESSAR CADASTRO =====
+document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
-    const name = document.getElementById('registerName').value.trim();
-    const phone = document.getElementById('registerPhone').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const confirmPassword = document.getElementById('registerConfirmPassword').value;
+    const cpf = document.getElementById('cadastroCPF').value.replace(/\D/g, '');
+    const telefone = document.getElementById('cadastroTelefone').value.replace(/\D/g, '');
+    const senha = document.getElementById('cadastroSenha').value;
+    const senhaConfirm = document.getElementById('cadastroSenhaConfirm').value;
 
-    if (password !== confirmPassword) {
-        alert('As senhas não coincidem!');
+    // Validações
+    if (!validarCPF(cpf)) {
+        alert('❌ CPF inválido!');
         return;
     }
 
-    if (password.length < 6) {
-        alert('A senha deve ter pelo menos 6 caracteres.');
+    if (telefone.length < 10) {
+        alert('❌ Telefone inválido! Digite um número completo.');
         return;
     }
 
-    const phoneNumbers = phone.replace(/\D/g, '');
-    if (phoneNumbers.length < 10) {
-        alert('Telefone inválido. Digite um número completo.');
+    if (senha.length < 6) {
+        alert('❌ A senha deve ter pelo menos 6 caracteres.');
+        return;
+    }
+
+    if (senha !== senhaConfirm) {
+        alert('❌ As senhas não coincidem!');
         return;
     }
 
     try {
-        const response = await fetch('http://localhost:3333/api/auth/register', {
+        // Tentar cadastrar no backend
+        const response = await fetch('http://localhost:3333/api/auth/cadastro', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nome: name,
-                telefone: phoneNumbers,
-                senha: password,
-                email: `${phoneNumbers}@cliente.bambinos`
-            })
+            body: JSON.stringify({ cpf, telefone, senha })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            alert(error.error || 'Erro ao criar conta. Tente novamente.');
+            alert(error.error || '❌ Erro ao cadastrar. CPF pode já estar em uso.');
             return;
         }
 
-        const data = await response.json();
+        const userData = await response.json();
 
-        alert('✅ Conta criada com sucesso! Faça login para continuar.');
+        // Salvar no localStorage
+        localStorage.setItem('bambinos_current_user', JSON.stringify(userData));
 
-        // Mudar para tab de login
-        document.querySelector('.tab:first-child').click();
-        document.getElementById('loginPhone').value = phone;
+        alert('✅ Cadastro realizado com sucesso!');
+        console.log('✅ Usuário cadastrado:', userData);
+
+        // Redirecionar para o app
+        window.location.href = '../index.html';
+
     } catch (err) {
         console.error('❌ Erro ao conectar:', err);
-        alert('Não foi possível conectar ao servidor.');
+
+        // Fallback: salvar no localStorage
+        const novoUsuario = {
+            id: Date.now(),
+            cpf,
+            telefone,
+            senha,
+            dataCadastro: new Date().toISOString()
+        };
+
+        // Verificar se CPF já existe
+        const usuariosSalvos = JSON.parse(localStorage.getItem('bambinos_usuarios')) || [];
+        const cpfExiste = usuariosSalvos.some(u => u.cpf === cpf);
+
+        if (cpfExiste) {
+            alert('❌ Este CPF já está cadastrado!');
+            return;
+        }
+
+        usuariosSalvos.push(novoUsuario);
+        localStorage.setItem('bambinos_usuarios', JSON.stringify(usuariosSalvos));
+        localStorage.setItem('bambinos_current_user', JSON.stringify(novoUsuario));
+
+        alert('✅ Cadastro realizado com sucesso!\n\nNota: Backend offline. Dados salvos localmente.');
+        window.location.href = '../index.html';
     }
-}
+});

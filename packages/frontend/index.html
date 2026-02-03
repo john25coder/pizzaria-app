@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
-<!-- HEADER -->
+<!-- HEADER --->
 <div class="header">
     <div class="logo">🍕 BAMBINOS</div>
     <div class="header-actions">
@@ -23,25 +23,20 @@
             <span class="user-name" id="userName">Cliente</span>
         </div>
         <button class="btn-logout" onclick="logout()">Sair</button>
-        <span class="cart-icon" onclick="toggleCart()">
-                🛒
-                <span class="cart-count" id="cartCount">0</span>
-            </span>
+        <span class="cart-icon" onclick="toggleCart()">🛒
+            <span class="cart-count" id="cartCount">0</span>
+        </span>
     </div>
 </div>
 
-<!-- MENU -->
+<!-- Resto do conteúdo permanece igual -->
 <div class="menu-container">
-    <div class="section-title">Crie Sua Pizza</div>
-    <div id="menuView" style="display:none;">
-        <div class="menu-grid" id="menuGrid"></div>
-    </div>
     <div id="pizzaBuilderView">
-        <!-- PIZZA BUILDER SERÁ RENDERIZADO AQUI -->
+        <!-- PIZZA BUILDER SERA RENDERIZADO AQUI --->
     </div>
 </div>
 
-<!-- CART SIDEBAR -->
+<!-- CART SIDEBAR --->
 <div class="cart-sidebar" id="cartSidebar">
     <div class="cart-header">
         <h2>Seu Carrinho</h2>
@@ -59,15 +54,15 @@
             <span>Taxa entrega:</span>
             <span id="delivery">R$ 8,00</span>
         </div>
-        <div class="summary-total">
-            <span>Total:</span>
-            <span id="total">R$ 8,00</span>
-        </div>
-        <button class="btn-checkout" onclick="checkout()">Finalizar Pedido</button>
     </div>
+    <div class="summary-total">
+        <span>Total:</span>
+        <span id="total">R$ 8,00</span>
+    </div>
+    <button class="btn-checkout" onclick="checkout()">Finalizar Pedido</button>
 </div>
 
-<!-- JAVASCRIPT -->
+<!-- JAVASCRIPT --->
 <script src="js/auth.js"></script>
 <script src="js/data.js"></script>
 <script src="js/cart.js"></script>

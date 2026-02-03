@@ -18,6 +18,7 @@ model Usuario {
   id       String  @id @default(cuid())
   email    String  @unique
   senha    String
+  cpf      String? @unique
   nome     String
   telefone String? @unique
   papel    String  @default("CLIENTE")

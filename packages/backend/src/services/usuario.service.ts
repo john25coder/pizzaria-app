@@ -46,20 +46,22 @@ export class UsuarioService {
         return usuarios.map(u => this.removerSenha(u)) as Usuario[];
     }
 
-    // ✅ Buscar por ID
-    async buscarPorId(id: string): Promise<Usuario> {
-        const usuario = await prisma.usuario.findUnique({
-            where: { id }
-        });
 
-        if (!usuario) {
-            throw new Error(`Usuário ${id} não encontrado`);
+    // Buscar usuário por ID - CORRIGIDO: string ao invés de number
+    async buscarPorId(id: string) {
+        try {
+            const usuario = await prisma.usuario.findUnique({
+                where: { id }
+            });
+            return usuario;
+        } catch (error) {
+            console.error('Erro ao buscar usuário por ID:', error);
+            throw new Error('Erro ao buscar usuário');
         }
-
-        return this.removerSenha(usuario) as Usuario;
     }
 
-    // ✅ Buscar por email
+
+
     async buscarPorEmail(email: string) {
         return await prisma.usuario.findUnique({
             where: { email }
@@ -163,14 +165,41 @@ export class UsuarioService {
         });
     }
 
-    // ✅ Verificar senha
-    async verificarSenha(senha: string, senhaHash: string): Promise<boolean> {
-        return await bcrypt.compare(senha, senhaHash);
+    // ✅ Verificar senha - CORRIGIDO: string ao invés de number
+    async verificarSenha(usuarioId: string, senha: string): Promise<boolean> {
+        try {
+            const usuario = await prisma.usuario.findUnique({
+                where: {id: usuarioId}
+            });
+
+            if (!usuario || !usuario.senha) {
+                return false;
+            }
+
+            // Comparar senha usando bcrypt
+            return await bcrypt.compare(senha, usuario.senha);
+        } catch (error) {
+            console.error('Erro ao verificar senha:', error);
+            return false;
+        }
     }
 
     // ✅ Remover senha do objeto
     private removerSenha(usuario: any) {
         const { senha, ...usuarioSemSenha } = usuario;
         return usuarioSemSenha;
+    }
+
+    // CORRIGIDO: findFirst ao invés de findUnique
+    async buscarPorCPF(cpf: string) {
+        try {
+            const usuario = await prisma.usuario.findFirst({
+                where: { cpf }
+            });
+            return usuario;
+        } catch (error) {
+            console.error('Erro ao buscar usuário por CPF:', error);
+            throw new Error('Erro ao buscar usuário');
+        }
     }
 }
