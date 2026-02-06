@@ -9,7 +9,6 @@ import clientesRoutes from './cliente.routes';
 import whatsappRoutes from '../routes/whatsapp.routes';
 import pedidosWhatsappRoutes from '../routes/pedidos-whatsapp.routes';
 
-
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -19,8 +18,11 @@ router.use('/pedidos', pedidosRoutes);
 router.use('/pagamentos', pagamentosRoutes);
 router.use('/health', healthRoutes);
 router.use('/clientes', clientesRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
-app.use('/api/pedidos', pedidosWhatsappRoutes);
 
+// ✅ rotas do WhatsApp
+router.use('/whatsapp', whatsappRoutes);
+
+// ✅ pedidos vindos do bot do WhatsApp
+router.use('/pedidos/whatsapp', pedidosWhatsappRoutes);
 
 export default router;

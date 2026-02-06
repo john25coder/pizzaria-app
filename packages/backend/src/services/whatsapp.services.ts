@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AIService } from './ai.services';
+import { AIService } from './ia.services';
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
